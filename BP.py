@@ -36,12 +36,12 @@ def cal_d_error_gradient(actual_hidden_output_array,output_layer_error_gradient,
 		hidden_layer_error_gradient[0,index] = actual_hidden_output_array[0,index]*(1-actual_hidden_output_array[0,index])*((output_weight_array[index]*output_layer_error_gradient).sum())
 	return hidden_layer_error_gradient
 
-def training(inputs, input_weight_array, output_weight_array, hidden_layer_threshold_array, output_layer_threshold_array, desire_output_array,learning_speed,mode = 'ab'):
+def training(inputs, input_weight_array, output_weight_array, hidden_layer_threshold_array, output_layer_threshold_array, desire_output_array,learning_speed,mode = 'ab',momentum_term_ = 0.95):
 	if('b' in mode):
-		print('b')
-		momentum_term = 0.95
+		#print('b')
+		momentum_term = momentum_term_
 	else:
-		print('no b')
+		#print('no b')
 		momentum_term = 0
 	error_array = np.ones(desire_output_array.shape)
 	squared_errors = (error_array * error_array).sum()
@@ -102,78 +102,73 @@ def main():
 	hidden_layer_threshold_array = initialize_random_array(1,num_of_hidden_layer,num_of_input)
 	output_layer_threshold_array = initialize_random_array(1,num_of_ouput,num_of_input)
 	
-	log_t_w_d ,l_r_l_w_d= training(x_x, input_weight_array.copy(), output_weight_array.copy(), hidden_layer_threshold_array.copy(), output_layer_threshold_array.copy(), y_y,learning_speed,'b')
-	print(len(log_t_w_d))
-	
-	log_t ,l_r_l_t= training(x_x, input_weight_array.copy(), output_weight_array.copy(), hidden_layer_threshold_array.copy(), output_layer_threshold_array.copy(), y_y,learning_speed,'a')
-	print(len(log_t))
 	
 	
-	#l_log_list = []
-	#learning_rate_log = []
-	#t_inputs = np.random.uniform(1,np.pi/2,size = 50).reshape(-1,1)
-	#t_outputs = np.zeros(50).reshape(-1,1)
-	#t_r_a = 2*np.sin(x_x)-0.7
-	#error_list = []
-	#for num_of_hidden_layer_index in range(1,5):
-	#	i_w = np.ones([num_of_input,num_of_hidden_layer_index])*0.5
-	#	o_w = np.ones([num_of_hidden_layer_index,num_of_ouput])*0.5
-	#	h_t = np.ones([1,num_of_hidden_layer_index])*0.5
-	#	o_t = np.ones([1,num_of_ouput])*0.5
-	#	t_outputs = np.zeros(50).reshape(-1,1)
-	#	l_log_list.append(training(x_x, i_w,o_w,h_t,o_t, y_y,learning_speed)[0])
-	#	t_error = []
-	#	for i in range(t_inputs.size):
-	#		t_input = t_inputs[i]
-	#		t_outputs[i] = cal_output(cal_output(t_input,i_w,h_t),o_w,o_t) + 0.8
-	#		t_error.append((t_outputs[i]-t_r_a[i])**2)
-	#	print(t_error)
-	#	error_list.append(math.sqrt(sum(t_error))/2)
-	#print(error_list)
+	avg_diff_momen_epoch = [0.0 for i in range(25)]
+	diff_momen = [0.0 for i in range(25)]
+	momentum = 0.5
+	for index in range(25):
+		diff_momen[index] = momentum
+		for times in range(100):
+			log,l = training(x_x,initialize_random_array(num_of_input,num_of_hidden_layer,num_of_input),initialize_random_array(num_of_hidden_layer,num_of_ouput,num_of_input),initialize_random_array(1,num_of_hidden_layer,num_of_input),initialize_random_array(1,num_of_ouput,num_of_input),y_y,learning_speed,momentum_term_ = momentum)
+			avg_diff_momen_epoch[index] = avg_diff_momen_epoch[index]+len(log)
+		avg_diff_momen_epoch[index] = avg_diff_momen_epoch[index]/100
+		momentum = 0.02 + momentum
+		print(diff_momen[index],avg_diff_momen_epoch[index])
+		
+	fig,ax = plt.subplots()
+	ax.set_title('averge epoch on different momentum term')
+	ax.set_xlabel('momentum term')
+	ax.set_ylabel('Epoch')
+	ax.plot(diff_momen,avg_diff_momen_epoch)
+	#log_t_w_d ,l_r_l_w_d= training(x_x, input_weight_array.copy(), output_weight_array.copy(), hidden_layer_threshold_array.copy(), output_layer_threshold_array.copy(), y_y,learning_speed,'b')
+	#print(len(log_t_w_d))
 	
+	#log_t ,l_r_l_t= training(x_x, input_weight_array.copy(), output_weight_array.copy(), hidden_layer_threshold_array.copy(), output_layer_threshold_array.copy(), y_y,learning_speed,'a')
+	#print(len(log_t))
 	
-	log,learning_rate_log= training(x_x,input_weight_array,output_weight_array,hidden_layer_threshold_array,output_layer_threshold_array,y_y,learning_speed)
-	log_array = np.array(log[1:])
-	print(log_array,log_array.size)
+	#log,learning_rate_log= training(x_x,input_weight_array,output_weight_array,hidden_layer_threshold_array,output_layer_threshold_array,y_y,learning_speed)
+	#log_array = np.array(log[1:])
+	#print(log_array,log_array.size)
 	
-	t_inputs = np.random.uniform(1,np.pi/2,size = 20).reshape(-1,1)
-	t_outputs = np.zeros(20).reshape(-1,1)
-	for i in range(t_inputs.size):
-		t_input = t_inputs[i]
-		t_outputs[i] = cal_output(cal_output(t_input,input_weight_array,hidden_layer_threshold_array),output_weight_array,output_layer_threshold_array) + 0.8
+	#t_inputs = np.random.uniform(1,np.pi/2,size = 20).reshape(-1,1)
+	#t_outputs = np.zeros(20).reshape(-1,1)
+	#for i in range(t_inputs.size):
+	#	t_input = t_inputs[i]
+	#	t_outputs[i] = cal_output(cal_output(t_input,input_weight_array,hidden_layer_threshold_array),output_weight_array,output_layer_threshold_array) + 0.8
 	
-	fig,axs = plt.subplots(2,2)
-	ax1 = axs[0,0]
-	ax1 = plt.subplot(221)
-	ax1.plot(x,y,color='red',linewidth=2,label='$2sin(x)-0.7$')
-	ax1.plot(t_inputs,t_outputs,'o',color='b',label='test_set')
-	ax1.set_title('Function Image')
-	ax1.set_xlabel('x')
-	ax1.set_ylabel('$f(x)$')
-	ax1.legend(loc = 'upper left')
+	#fig,axs = plt.subplots(2,2)
+	#ax1 = axs[0,0]
+	#ax1 = plt.subplot(221)
+	#ax1.plot(x,y,color='red',linewidth=2,label='$2sin(x)-0.7$')
+	#ax1.plot(t_inputs,t_outputs,'o',color='b',label='test_set')
+	#ax1.set_title('Function Image')
+	#ax1.set_xlabel('x')
+	#ax1.set_ylabel('$f(x)$')
+	#ax1.legend(loc = 'upper left')
 	
-	ax2 = axs[0,1]
-	ax2 = plt.subplot(222)
-	ax2.set_title('Learning rate for solving $2sin(x)-0.7$')
-	ax2.set_xlabel('Epoch')
-	ax2.set_ylabel('Learning rate')
-	ax2.plot(range(len(l_r_l_w_d)),l_r_l_w_d,'g',label='with momentum',linewidth=2)
-	ax2.plot(range(len(l_r_l_t)),l_r_l_t,'c',label='with adaptive learning rate',linewidth=2)
-	ax2.plot(range(len(learning_rate_log)),learning_rate_log,'k',label='with momentum&adaptive learning rate',linewidth=2)
-	ax2.legend()
+	#ax2 = axs[0,1]
+	#ax2 = plt.subplot(222)
+	#ax2.set_title('Learning rate for solving $2sin(x)-0.7$')
+	#ax2.set_xlabel('Epoch')
+	#ax2.set_ylabel('Learning rate')
+	#ax2.plot(range(len(l_r_l_w_d)),l_r_l_w_d,'g',label='with momentum',linewidth=2)
+	#ax2.plot(range(len(l_r_l_t)),l_r_l_t,'c',label='with adaptive learning rate',linewidth=2)
+	#ax2.plot(range(len(learning_rate_log)),learning_rate_log,'k',label='with momentum&adaptive learning rate',linewidth=2)
+	#ax2.legend()
 	
-	ax3 = axs[1,1]
-	ax3 = plt.subplot(212)
-	ax3.plot(np.arange(log_array.size),log_array,'k',label='with momentum&adaptive learning rate',linewidth=2)
-	ax3.plot(range(len(log_t_w_d)),log_t_w_d,'g',label='with momentum',linewidth=2)
-	ax3.plot(range(len(log_t)),log_t,'c',label='with adaptive learning rate',linewidth=2)
+	#ax3 = axs[1,1]
+	#ax3 = plt.subplot(212)
+	#ax3.plot(np.arange(log_array.size),log_array,'k',label='with momentum&adaptive learning rate',linewidth=2)
+	#ax3.plot(range(len(log_t_w_d)),log_t_w_d,'g',label='with momentum',linewidth=2)
+	#ax3.plot(range(len(log_t)),log_t,'c',label='with adaptive learning rate',linewidth=2)
 	#ax3.plot(np.linspace(0,8654,log_array.size),log_array,'g',label='with momentum',linewidth=2)
-	ax3.set_xlabel('Epoch')
-	ax3.set_ylabel('Sum-squared error')
-	ax3.set_title('Learning curve for solving $2sin(x)-0.7$')
-	ax3.set_ylim(0.0001,100)
-	ax3.set_yscale('log')
-	ax3.legend()
+	#ax3.set_xlabel('Epoch')
+	#ax3.set_ylabel('Sum-squared error')
+	#ax3.set_title('Learning curve for solving $2sin(x)-0.7$')
+	#ax3.set_ylim(0.0001,100)
+	#ax3.set_yscale('log')
+	#ax3.legend()
 	plt.show()
 
 if __name__ == '__main__':
